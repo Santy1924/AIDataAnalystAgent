@@ -40,6 +40,76 @@ def analyze_csv(file) -> dict:
             and non_missing_values > 0
         )
 
+        # Inicializar detección de inconsistencias
+        invalid_numeric_values = 0
+        invalid_numeric_examples = []
+        has_numeric_inconsistencies = False
+
+        # Detectar posibles inconsistencias numéricas
+        # Primero revisamos si la columna ya es numérica
+        if column in numeric_columns:
+            numeric_values = pd.to_numeric(
+                df[column],
+                errors="coerce"
+            )
+
+            invalid_numeric_values = int(
+                numeric_values.isna().sum() - missing_values
+            )
+
+            has_numeric_inconsistencies = (
+                invalid_numeric_values > 0
+            )
+
+            if has_numeric_inconsistencies:
+                invalid_numeric_examples = (
+                    df.loc[
+                        numeric_values.isna() & df[column].notna(),
+                        column
+                    ]
+                    .astype(str)
+                    .unique()
+                    .tolist()[:5]
+                )
+
+        else:
+            # Para columnas de texto: verificar si la columna
+            # "debería" ser numérica analizando qué proporción
+            # de sus valores no nulos son convertibles a número.
+            converted_values = pd.to_numeric(
+                df[column],
+                errors="coerce"
+            )
+
+            non_null_count = int(df[column].notna().sum())
+            valid_numeric_count = int(converted_values.notna().sum())
+
+            # Consideramos que la columna "debería ser numérica"
+            # solo si la MAYORÍA (>50%) de sus valores no nulos
+            # son numéricos. Esto evita marcar columnas de texto
+            # puras (como `name`) como inconsistentes.
+            if non_null_count > 0 and (
+                valid_numeric_count / non_null_count
+            ) > 0.5:
+                # Los valores inválidos son los que no son nulos
+                # en el DataFrame original pero SÍ se volvieron
+                # NaN al convertir — es decir, los no numéricos.
+                invalid_mask = df[column].notna() & converted_values.isna()
+                invalid_numeric_values = int(invalid_mask.sum())
+
+                has_numeric_inconsistencies = (
+                    invalid_numeric_values > 0
+                )
+
+                if has_numeric_inconsistencies:
+                    invalid_numeric_examples = (
+                        df.loc[invalid_mask, column]
+                        .astype(str)
+                        .unique()
+                        .tolist()[:5]
+                    )
+
+        # Agregar información de la columna
         columns_info.append({
             "name": column,
             "data_type": str(df[column].dtype),
@@ -48,6 +118,9 @@ def analyze_csv(file) -> dict:
             "unique_values": unique_values,
             "unique_percentage": unique_percentage,
             "is_unique": is_unique,
+            "has_numeric_inconsistencies": has_numeric_inconsistencies,
+            "invalid_numeric_values": invalid_numeric_values,
+            "invalid_numeric_examples": invalid_numeric_examples,
         })
 
     # Detectar filas duplicadas
