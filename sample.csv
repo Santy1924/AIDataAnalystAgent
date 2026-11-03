@@ -1,5 +1,9 @@
-name,age,salary
-Ana,25,2500
-Luis,30,3200
-Carlos,unknown,2800
-Maria,28,3500
+name,city,profession,department
+Ana,Barranquilla,Developer,Technology
+Luis,Bogota,Designer,Marketing
+Carlos,Medellin,Engineer,Engineering
+Maria,Cali,Teacher,Education
+Sofia,Cartagena,Accountant,Finance
+Andres,Bucaramanga,Architect,Construction
+Laura,Santa Marta,Doctor,Healthcare
+Pedro,Manizales,Lawyer,Legal

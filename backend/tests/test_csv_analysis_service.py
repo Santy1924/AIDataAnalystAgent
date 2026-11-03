@@ -223,6 +223,41 @@ def test_result_json_structure():
 
 
 # ---------------------------------------------------------------------------
+# Test 7: CSV sin columnas numéricas no falla y devuelve numeric_summary vacío
+# ---------------------------------------------------------------------------
+
+def test_no_numeric_columns_empty_summary():
+    """
+    Cuando un CSV tiene solo columnas de texto (sin columnas numéricas),
+    numeric_summary debe ser {} y las métricas de columnas deben calcularse.
+    """
+    csv_content = (
+        "name,city\n"
+        "Ana,Barranquilla\n"
+        "Luis,Bogota\n"
+        "Carlos,Medellin"
+    )
+
+    result = analyze_csv(csv_file(csv_content))
+
+    assert result["numeric_summary"] == {}, (
+        f"Se esperaba numeric_summary vacío, got: {result['numeric_summary']}"
+    )
+    assert result["rows"] == 3
+    assert result["columns_count"] == 2
+
+    name_col = column_info(result, "name")
+    assert name_col["missing_values"] == 0
+    assert name_col["has_numeric_inconsistencies"] is False
+
+    city_col = column_info(result, "city")
+    assert city_col["missing_values"] == 0
+    assert city_col["has_numeric_inconsistencies"] is False
+
+    print("[PASS] Test 7: CSV sin columnas numericas devuelve numeric_summary={} y metricas validas.")
+
+
+# ---------------------------------------------------------------------------
 # Runner manual (sin pytest)
 # ---------------------------------------------------------------------------
 
@@ -234,6 +269,7 @@ if __name__ == "__main__":
         test_null_and_invalid_combination,
         test_fully_numeric_column_no_issues,
         test_result_json_structure,
+        test_no_numeric_columns_empty_summary,
     ]
 
     failed = 0

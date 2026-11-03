@@ -1,9 +1,11 @@
 
 import pandas as pd
 
+from app.infrastructure.readers.csv_reader import read_csv
+
 
 def analyze_csv(file) -> dict:
-    df = pd.read_csv(file)
+    df = read_csv(file)
 
     numeric_columns = df.select_dtypes(include="number").columns.tolist()
 
@@ -133,7 +135,10 @@ def analyze_csv(file) -> dict:
     )
 
     # Resumen estadístico de columnas numéricas
-    numeric_summary = df[numeric_columns].describe().to_dict()
+    if numeric_columns:
+        numeric_summary = df[numeric_columns].describe().to_dict()
+    else:
+        numeric_summary = {}
 
     return {
         "rows": rows,

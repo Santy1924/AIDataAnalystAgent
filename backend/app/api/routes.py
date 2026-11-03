@@ -1,6 +1,7 @@
 from fastapi import APIRouter, File, HTTPException, UploadFile
-from pandas.errors import EmptyDataError, ParserError
 
+from app.api.schemas.analysis_schemas import DatasetReport
+from app.infrastructure.readers.csv_reader import CSVParseError, EmptyCSVError
 from app.services.csv_analysis_service import analyze_csv
 
 router = APIRouter()
@@ -18,7 +19,7 @@ def health_check():
     return {"status": "healthy"}
 
 
-@router.post("/analyze")
+@router.post("/analyze", response_model=DatasetReport)
 def analyze_file(file: UploadFile = File(...)):
     if not file.filename or not file.filename.lower().endswith(".csv"):
         raise HTTPException(
@@ -29,12 +30,12 @@ def analyze_file(file: UploadFile = File(...)):
     try:
         result = analyze_csv(file.file)
         return result
-    except EmptyDataError:
+    except EmptyCSVError:
         raise HTTPException(
             status_code=400,
             detail="The CSV file is empty."
         )
-    except (ParserError, UnicodeDecodeError):
+    except CSVParseError:
         raise HTTPException(
             status_code=400,
             detail="The CSV file could not be parsed."
